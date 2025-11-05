@@ -17,5 +17,13 @@ export const movementsTrend = async (req, res) => {
     GROUP BY day
     ORDER BY day;
   `;
-  res.json(raw);
+  
+  // Convert BigInt to Number for JSON serialization
+  const result = raw.map(row => ({
+    day: row.day,
+    inbound: Number(row.inbound),
+    outbound: Number(row.outbound)
+  }));
+  
+  res.json(result);
 };

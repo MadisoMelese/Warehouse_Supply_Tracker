@@ -24,3 +24,48 @@ export const getItem = async (req, res) => {
   if (!item) return res.status(404).json({ error: 'Not found' });
   res.json(item);
 };
+
+export const updateItem = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { name, sku, supplier, lowStockThreshold } = req.body;
+    
+    // Check if item exists
+    const existing = await prisma.item.findUnique({ 
+      where: { id },
+      include: { movements: { take: 1 } }
+    });
+    if (!existing) return res.status(404).json({ error: 'Item not found' });
+    
+    // Don't allow updating initialQuantity if movements exist (data integrity)
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (sku !== undefined) updateData.sku = sku;
+    if (supplier !== undefined) updateData.supplier = supplier;
+    if (lowStockThreshold !== undefined) updateData.lowStockThreshold = lowStockThreshold;
+    
+    // Only allow initialQuantity update if no movements exist
+    if (req.body.initialQuantity !== undefined) {
+      if (existing.movements.length > 0) {
+        return res.status(400).json({ 
+          error: 'Cannot update initialQuantity after movements have been recorded' 
+        });
+      }
+      updateData.initialQuantity = req.body.initialQuantity;
+      updateData.currentStock = req.body.initialQuantity; // Reset currentStock too
+    }
+    
+    const item = await prisma.item.update({ where: { id }, data: updateData });
+    res.json(item);
+  } catch (err) {
+    if (err.code === 'P2025') return res.status(404).json({ error: 'Item not found' });
+    if (err.code === 'P2002') return res.status(409).json({ error: 'SKU already exists' });
+    res.status(400).json({ error: err.message });
+  }
+};
+
+export const deleteItem = async (req, res) => {
+  const id = Number(req.params.id);
+  await prisma.item.delete({ where: { id } });
+  res.json({ message: 'Item deleted' });
+};
