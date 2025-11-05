@@ -1,9 +1,14 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { PrismaClient } = require('@prisma/client');
-const cron = require('node-cron');
-const { checkAndNotifyLowStock } = require('./utils/alerts');
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import { PrismaClient } from '@prisma/client';
+import cron from 'node-cron';
+import { checkAndNotifyLowStock } from './utils/alerts.js';
+
+import authRouter from './routes/auth.js';
+import itemsRouter from './routes/items.js';
+import movementsRouter from './routes/movements.js';
+import analyticsRouter from './routes/analytics.js';
 
 const prisma = new PrismaClient();
 const app = express();
@@ -11,10 +16,10 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/auth', require('./routes/auth'));
-app.use('/api/items', require('./routes/items'));
-app.use('/api/movements', require('./routes/movements'));
-app.use('/api/analytics', require('./routes/analytics'));
+app.use('/auth', authRouter);
+app.use('/api/items', itemsRouter);
+app.use('/api/movements', movementsRouter);
+app.use('/api/analytics', analyticsRouter);
 
 const PORT = process.env.PORT || 4000;
 

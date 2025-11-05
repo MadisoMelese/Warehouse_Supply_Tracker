@@ -1,7 +1,7 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-exports.createItem = async (req, res) => {
+export const createItem = async (req, res) => {
   try {
     const { name, sku, supplier, initialQuantity = 0, lowStockThreshold = 5 } = req.body;
     const item = await prisma.item.create({
@@ -13,12 +13,12 @@ exports.createItem = async (req, res) => {
   }
 };
 
-exports.getItems = async (req, res) => {
+export const getItems = async (req, res) => {
   const items = await prisma.item.findMany({ orderBy: { name: 'asc' } });
   res.json(items);
 };
 
-exports.getItem = async (req, res) => {
+export const getItem = async (req, res) => {
   const id = Number(req.params.id);
   const item = await prisma.item.findUnique({ where: { id } });
   if (!item) return res.status(404).json({ error: 'Not found' });

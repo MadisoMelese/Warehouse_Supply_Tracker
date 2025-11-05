@@ -1,12 +1,14 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-exports.stockPerItem = async (req, res) => {
-  const items = await prisma.item.findMany({ select: { id: true, name: true, currentStock: true, lowStockThreshold: true } });
+export const stockPerItem = async (req, res) => {
+  const items = await prisma.item.findMany({
+    select: { id: true, name: true, currentStock: true, lowStockThreshold: true }
+  });
   res.json(items);
 };
 
-exports.movementsTrend = async (req, res) => {
+export const movementsTrend = async (req, res) => {
   const raw = await prisma.$queryRaw`
     SELECT date_trunc('day', "timestamp")::date AS day,
            sum(CASE WHEN type='INBOUND' THEN quantity ELSE 0 END) AS inbound,

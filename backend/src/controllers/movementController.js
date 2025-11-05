@@ -1,8 +1,8 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 // Record movement in same transaction as stock update
-exports.createMovement = async (req, res) => {
+export const createMovement = async (req, res) => {
   const { itemId, type, quantity } = req.body;
   if (!itemId || !type || !quantity || quantity <= 0) return res.status(400).json({ error: 'Invalid payload' });
 
@@ -35,7 +35,7 @@ exports.createMovement = async (req, res) => {
   }
 };
 
-exports.getMovements = async (req, res) => {
+export const getMovements = async (req, res) => {
   const { itemId, type, from, to } = req.query;
   const where = {};
   if (itemId) where.itemId = Number(itemId);

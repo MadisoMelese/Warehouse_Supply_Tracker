@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import authenticateJWT from '../middleware/auth.js';
+import { createMovement, getMovements } from '../controllers/movementController.js';
+
 const router = express.Router();
-const authenticateJWT = require('../middleware/auth');
-const { createMovement, getMovements } = require('../controllers/movementController');
 
 router.post('/', authenticateJWT, createMovement);
 router.get('/', authenticateJWT, getMovements);
 
-module.exports = router;
+export default router;

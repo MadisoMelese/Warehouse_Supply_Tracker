@@ -1,9 +1,10 @@
-const express = require('express');
+import express from 'express';
+import authenticateJWT from '../middleware/auth.js';
+import { stockPerItem, movementsTrend } from '../controllers/analyticsController.js';
+
 const router = express.Router();
-const authenticateJWT = require('../middleware/auth');
-const { stockPerItem, movementsTrend } = require('../controllers/analyticsController');
 
 router.get('/stock-per-item', authenticateJWT, stockPerItem);
 router.get('/movements-trend', authenticateJWT, movementsTrend);
 
-module.exports = router;
+export default router;

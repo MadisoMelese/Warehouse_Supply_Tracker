@@ -1,10 +1,11 @@
-const express = require('express');
+import express from 'express';
+import authenticateJWT from '../middleware/auth.js';
+import { createItem, getItems, getItem } from '../controllers/itemController.js';
+
 const router = express.Router();
-const authenticateJWT = require('../middleware/auth');
-const { createItem, getItems, getItem } = require('../controllers/itemController');
 
 router.get('/', authenticateJWT, getItems);
 router.get('/:id', authenticateJWT, getItem);
 router.post('/', authenticateJWT, createItem);
 
-module.exports = router;
+export default router;

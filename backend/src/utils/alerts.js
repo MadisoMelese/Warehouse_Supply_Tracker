@@ -1,9 +1,9 @@
-const { PrismaClient } = require('@prisma/client');
-const nodemailer = require('nodemailer');
+import { PrismaClient } from '@prisma/client';
+import nodemailer from 'nodemailer';
+
 const prisma = new PrismaClient();
 
-async function checkAndNotifyLowStock() {
-  // Use raw query for comparison
+export const checkAndNotifyLowStock = async () => {
   const rows = await prisma.$queryRaw`
     SELECT id, name, "currentStock", "lowStockThreshold"
     FROM "Item"
@@ -21,7 +21,6 @@ async function checkAndNotifyLowStock() {
     return;
   }
 
-  // Ethereal test SMTP; in production replace with real SMTP
   const transporter = nodemailer.createTransport({
     host: 'smtp.ethereal.email',
     port: 587,
@@ -31,7 +30,9 @@ async function checkAndNotifyLowStock() {
     }
   });
 
-  const html = `<p>Low stock alert:</p><ul>${rows.map(r => `<li>${r.name} (stock: ${r.currentstock ?? r.currentStock}, threshold: ${r.lowstockthreshold ?? r.lowStockThreshold})</li>`).join('')}</ul>`;
+  const html = `<p>Low stock alert:</p><ul>${
+    rows.map(r => `<li>${r.name} (stock: ${r.currentStock}, threshold: ${r.lowStockThreshold})</li>`).join('')
+  }</ul>`;
 
   try {
     const info = await transporter.sendMail({
@@ -44,6 +45,4 @@ async function checkAndNotifyLowStock() {
   } catch (err) {
     console.error('Failed to send low-stock email:', err);
   }
-}
-
-module.exports = { checkAndNotifyLowStock };
+};
