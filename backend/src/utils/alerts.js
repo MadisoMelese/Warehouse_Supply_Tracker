@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from './prisma.js';
 import nodemailer from 'nodemailer';
 
-const prisma = new PrismaClient();
-
 export const checkAndNotifyLowStock = async () => {
+  
   const rows = await prisma.$queryRaw`
     SELECT id, name, "currentStock", "lowStockThreshold"
     FROM "Item"

@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
-
+import prisma from '../utils/prisma.js';
+// 4896
 export const stockPerItem = async (req, res) => {
   const items = await prisma.item.findMany({
     select: { id: true, name: true, currentStock: true, lowStockThreshold: true }

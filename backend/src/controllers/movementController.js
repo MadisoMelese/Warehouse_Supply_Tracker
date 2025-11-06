@@ -1,10 +1,18 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import prisma from '../utils/prisma.js';
 
 // Record movement in same transaction as stock update
 export const createMovement = async (req, res) => {
   const { itemId, type, quantity } = req.body;
-  if (!itemId || !type || !quantity || quantity <= 0) return res.status(400).json({ error: 'Invalid payload' });
+  
+  // Validate required fields
+  if (!itemId || !type || !quantity || quantity <= 0) {
+    return res.status(400).json({ error: 'Invalid payload: itemId, type, and positive quantity are required' });
+  }
+  
+  // Validate movement type
+  if (type !== 'INBOUND' && type !== 'OUTBOUND') {
+    return res.status(400).json({ error: 'Type must be either INBOUND or OUTBOUND' });
+  }
 
   try {
     const result = await prisma.$transaction(async (tx) => {

@@ -1,14 +1,32 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import prisma from '../utils/prisma.js';
 
 export const createItem = async (req, res) => {
   try {
     const { name, sku, supplier, initialQuantity = 0, lowStockThreshold = 5 } = req.body;
+    
+    // Validate required fields
+    if (!name || !sku) {
+      return res.status(400).json({ error: 'Name and SKU are required' });
+    }
+    
+    // Validate initialQuantity is non-negative
+    if (initialQuantity < 0) {
+      return res.status(400).json({ error: 'Initial quantity must be non-negative' });
+    }
+    
+    // Validate lowStockThreshold is non-negative
+    if (lowStockThreshold < 0) {
+      return res.status(400).json({ error: 'Low stock threshold must be non-negative' });
+    }
+    
     const item = await prisma.item.create({
       data: { name, sku, supplier, initialQuantity, currentStock: initialQuantity, lowStockThreshold }
     });
-    res.json(item);
+    res.status(201).json(item);
   } catch (err) {
+    if (err.code === 'P2002') {
+      return res.status(409).json({ error: 'SKU already exists' });
+    }
     res.status(400).json({ error: err.message });
   }
 };
@@ -65,7 +83,14 @@ export const updateItem = async (req, res) => {
 };
 
 export const deleteItem = async (req, res) => {
-  const id = Number(req.params.id);
-  await prisma.item.delete({ where: { id } });
-  res.json({ message: 'Item deleted' });
+  try {
+    const id = Number(req.params.id);
+    await prisma.item.delete({ where: { id } });
+    res.json({ message: 'Item deleted' });
+  } catch (err) {
+    if (err.code === 'P2025') {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+    res.status(400).json({ error: err.message });
+  }
 };
