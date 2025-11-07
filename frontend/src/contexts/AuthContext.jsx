@@ -17,6 +17,7 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Token decoding error:', error);
         localStorage.removeItem('token');
+        setUser(null);
       }
     }
     setLoading(false);
