@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Items from './pages/Items';
 import Movements from './pages/Movements';
 import Analytics from './pages/Analytics';
+import Users from './pages/Users';
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -52,6 +53,16 @@ const AppRoutes = () => {
           <ProtectedRoute>
             <Layout>
               <Analytics />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <Users />
             </Layout>
           </ProtectedRoute>
         }

@@ -40,6 +40,7 @@ export const authAPI = {
   login: (email, password) => api.post('/auth/login', { email, password }),
   register: (email, password) => api.post('/auth/register', { email, password }),
   logout: () => api.post('/auth/logout'),
+  getAllUsers: () => api.get('/auth/users'),
 };
 
 // Items API

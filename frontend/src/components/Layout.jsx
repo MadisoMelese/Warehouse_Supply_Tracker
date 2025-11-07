@@ -18,6 +18,7 @@ const Layout = ({ children }) => {
     { path: '/items', label: 'Items' },
     { path: '/movements', label: 'Movements' },
     { path: '/analytics', label: 'Analytics' },
+    { path: '/users', label: 'Users' },
   ];
 
   return (

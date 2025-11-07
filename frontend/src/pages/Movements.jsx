@@ -4,7 +4,6 @@ import { movementsAPI, itemsAPI } from '../services/api';
 const Movements = () => {
   const [movements, setMovements] = useState([]);
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [filters, setFilters] = useState({
     itemId: '',
@@ -18,6 +17,8 @@ const Movements = () => {
     quantity: 1,
   });
   const [error, setError] = useState('');
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -54,6 +55,7 @@ const Movements = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     try {
       await movementsAPI.create(formData);
@@ -63,11 +65,20 @@ const Movements = () => {
         type: 'INBOUND',
         quantity: 1,
       });
-      fetchMovements();
-      fetchItems();
+      setSelectedItem(null);
+      await Promise.all([fetchMovements(), fetchItems()]);
     } catch (error) {
       setError(error.response?.data?.error || 'Failed to create movement');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  const handleItemChange = (e) => {
+    const itemId = e.target.value;
+    setFormData({ ...formData, itemId });
+    const item = items.find((i) => i.id === Number(itemId));
+    setSelectedItem(item);
   };
 
   const openModal = () => {
@@ -76,6 +87,7 @@ const Movements = () => {
       type: 'INBOUND',
       quantity: 1,
     });
+    setSelectedItem(null);
     setError('');
     setShowModal(true);
   };
@@ -105,11 +117,19 @@ const Movements = () => {
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Stock Movements</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Stock Movements</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Track all inbound and outbound stock transactions
+          </p>
+        </div>
         <button
           onClick={openModal}
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
+          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
           Record Movement
         </button>
       </div>
@@ -188,7 +208,7 @@ const Movements = () => {
                   Quantity
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock After
+                  Item Current Stock
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Timestamp
@@ -216,8 +236,11 @@ const Movements = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {movement.quantity}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {movement.item.currentStock}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{movement.item.currentStock}</div>
+                    {movement.item.currentStock < movement.item.lowStockThreshold && (
+                      <div className="text-xs text-red-600">Low Stock</div>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {new Date(movement.timestamp).toLocaleString()}
@@ -259,7 +282,7 @@ const Movements = () => {
                         required
                         className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                         value={formData.itemId}
-                        onChange={(e) => setFormData({ ...formData, itemId: e.target.value })}
+                        onChange={handleItemChange}
                       >
                         <option value="">Select an item</option>
                         {items.map((item) => (
@@ -268,6 +291,24 @@ const Movements = () => {
                           </option>
                         ))}
                       </select>
+                      {selectedItem && (
+                        <div className="mt-2 p-3 bg-blue-50 rounded-md">
+                          <p className="text-sm text-gray-700">
+                            <span className="font-medium">Current Stock:</span> {selectedItem.currentStock}
+                          </p>
+                          <p className="text-sm text-gray-700 mt-1">
+                            <span className="font-medium">After {formData.type}:</span>{' '}
+                            <span className={formData.type === 'OUTBOUND' && selectedItem.currentStock - formData.quantity < 0 ? 'text-red-600 font-bold' : 'text-green-600 font-bold'}>
+                              {formData.type === 'INBOUND'
+                                ? selectedItem.currentStock + formData.quantity
+                                : selectedItem.currentStock - formData.quantity}
+                            </span>
+                            {formData.type === 'OUTBOUND' && selectedItem.currentStock - formData.quantity < 0 && (
+                              <span className="ml-2 text-red-600 text-xs">⚠️ Insufficient stock!</span>
+                            )}
+                          </p>
+                        </div>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Type *</label>
@@ -277,8 +318,8 @@ const Movements = () => {
                         value={formData.type}
                         onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                       >
-                        <option value="INBOUND">Inbound</option>
-                        <option value="OUTBOUND">Outbound</option>
+                        <option value="INBOUND">Inbound (+)</option>
+                        <option value="OUTBOUND">Outbound (-)</option>
                       </select>
                     </div>
                     <div>
@@ -297,9 +338,10 @@ const Movements = () => {
                 <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                   <button
                     type="submit"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                    disabled={loading || (selectedItem && formData.type === 'OUTBOUND' && selectedItem.currentStock - formData.quantity < 0)}
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Record
+                    {loading ? 'Recording...' : 'Record'}
                   </button>
                   <button
                     type="button"
