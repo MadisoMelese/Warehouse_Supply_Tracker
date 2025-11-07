@@ -15,6 +15,7 @@ export const AuthProvider = ({ children }) => {
         const payload = JSON.parse(atob(token.split('.')[1]));
         setUser({ email: payload.email, role: payload.role });
       } catch (error) {
+        console.error('Token decoding error:', error);
         localStorage.removeItem('token');
       }
     }
