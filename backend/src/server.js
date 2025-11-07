@@ -38,6 +38,11 @@ app.use(cors(corsOptions));
 
 app.use(express.json());
 
+// Health check endpoint (no auth required)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Routes
 app.use('/auth', authRouter);
 app.use('/api/items', itemsRouter);
