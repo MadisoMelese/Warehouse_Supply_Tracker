@@ -161,16 +161,16 @@ jobs:
           EOF
 
       - name: Build images
-        run: docker-compose build
+        run: docker compose build
 
       - name: Start services
-        run: docker-compose up -d
+        run: docker compose up -d
 
       - name: Wait for services to be ready
         run: |
           echo "Waiting for services to start..."
           sleep 30
-          docker-compose ps
+          docker compose ps
 
       - name: Check backend health
         run: |
@@ -182,9 +182,9 @@ jobs:
 
       - name: View logs
         if: failure()
-        run: docker-compose logs
+        run: docker compose logs
 
       - name: Cleanup
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
 
