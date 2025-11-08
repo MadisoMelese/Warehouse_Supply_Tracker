@@ -129,12 +129,14 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.name }}-${{ matrix.service }}
           tags: |
-            type=ref,event=branch,format=lowercase
-            type=ref,event=pr,format=lowercase
-            type=semver,pattern={{version}},format=lowercase
-            type=semver,pattern={{major}}.{{minor}},format=lowercase
-            type=sha,prefix={{branch}}-,format=lowercase
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
+          flavor: |
+            lowercase=true
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
