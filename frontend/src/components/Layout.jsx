@@ -13,12 +13,18 @@ const Layout = ({ children }) => {
     navigate('/login');
   };
 
+  const { isAdmin } = useAuth();
+  
   const navItems = [
     { path: '/dashboard', label: 'Dashboard' },
     { path: '/items', label: 'Items' },
     { path: '/movements', label: 'Movements' },
+    ...(isAdmin ? [
+      { path: '/categories', label: 'Categories' },
+      { path: '/tracking', label: 'Tracking' },
+      { path: '/users', label: 'Users' },
+    ] : []),
     { path: '/analytics', label: 'Analytics' },
-    { path: '/users', label: 'Users' },
   ];
 
   return (
@@ -47,7 +53,16 @@ const Layout = ({ children }) => {
               </div>
             </div>
             <div className="hidden sm:flex sm:items-center">
-              <span className="text-sm text-gray-700 mr-4">{user?.email}</span>
+              <span className="text-sm text-gray-700 mr-2">{user?.email}</span>
+              {user?.role && (
+                <span className={`text-xs px-2 py-1 rounded-full mr-4 ${
+                  user.role === 'ADMIN' 
+                    ? 'bg-purple-100 text-purple-800' 
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {user.role}
+                </span>
+              )}
               <button
                 onClick={handleLogout}
                 className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -93,6 +108,15 @@ const Layout = ({ children }) => {
             <div className="pt-4 pb-3 border-t border-gray-200">
               <div className="px-4">
                 <div className="text-base font-medium text-gray-800">{user?.email}</div>
+                {user?.role && (
+                  <span className={`text-xs px-2 py-1 rounded-full mt-1 inline-block ${
+                    user.role === 'ADMIN' 
+                      ? 'bg-purple-100 text-purple-800' 
+                      : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {user.role}
+                  </span>
+                )}
               </div>
               <div className="mt-3 space-y-1">
                 <button

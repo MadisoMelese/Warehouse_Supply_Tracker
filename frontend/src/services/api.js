@@ -41,11 +41,21 @@ export const authAPI = {
   register: (email, password) => api.post('/auth/register', { email, password }),
   logout: () => api.post('/auth/logout'),
   getAllUsers: () => api.get('/auth/users'),
+  createUser: (data) => api.post('/auth/users', data),
+};
+
+// Categories API
+export const categoriesAPI = {
+  getAll: () => api.get('/api/categories'),
+  getById: (id) => api.get(`/api/categories/${id}`),
+  create: (data) => api.post('/api/categories', data),
+  update: (id, data) => api.put(`/api/categories/${id}`, data),
+  delete: (id) => api.delete(`/api/categories/${id}`),
 };
 
 // Items API
 export const itemsAPI = {
-  getAll: () => api.get('/api/items'),
+  getAll: (params) => api.get('/api/items', { params }),
   getById: (id) => api.get(`/api/items/${id}`),
   create: (data) => api.post('/api/items', data),
   update: (id, data) => api.put(`/api/items/${id}`, data),
@@ -55,7 +65,18 @@ export const itemsAPI = {
 // Movements API
 export const movementsAPI = {
   getAll: (params) => api.get('/api/movements', { params }),
+  getById: (id) => api.get(`/api/movements/${id}`),
   create: (data) => api.post('/api/movements', data),
+  approve: (id) => api.post(`/api/movements/${id}/approve`),
+  reject: (id, reason) => api.post(`/api/movements/${id}/reject`, { reason }),
+  returnItem: (id) => api.post(`/api/movements/${id}/return`),
+};
+
+// Tracking API (Admin only)
+export const trackingAPI = {
+  getAssignments: (params) => api.get('/api/tracking/assignments', { params }),
+  getUserActivity: () => api.get('/api/tracking/user-activity'),
+  getPendingRequests: () => api.get('/api/tracking/pending-requests'),
 };
 
 // Analytics API

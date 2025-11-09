@@ -11,6 +11,8 @@ import Items from './pages/Items';
 import Movements from './pages/Movements';
 import Analytics from './pages/Analytics';
 import Users from './pages/Users';
+import Categories from './pages/Categories';
+import Tracking from './pages/Tracking';
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -50,6 +52,26 @@ const AppRoutes = () => {
         }
       />
       <Route
+        path="/categories"
+        element={
+          <ProtectedRoute requireAdmin>
+            <Layout>
+              <Categories />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tracking"
+        element={
+          <ProtectedRoute requireAdmin>
+            <Layout>
+              <Tracking />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/analytics"
         element={
           <ProtectedRoute>
@@ -62,7 +84,7 @@ const AppRoutes = () => {
       <Route
         path="/users"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute requireAdmin>
             <Layout>
               <Users />
             </Layout>

@@ -11,7 +11,11 @@ export const AuthProvider = ({ children }) => {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-        setUser({ email: payload.email, role: payload.role });
+        setUser({ 
+          email: payload.email, 
+          role: payload.role, 
+          id: payload.sub 
+        });
       } catch (error) {
         console.error("Token decoding error:", error);
         localStorage.removeItem("token");
@@ -24,10 +28,14 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login(email, password);
-      const { token } = response.data;
+      const { token, user: userData } = response.data;
       localStorage.setItem("token", token);
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      setUser({ email: payload.email, role: payload.role });
+      // Use user data from response, fallback to token payload
+      const userInfo = userData || (() => {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        return { email: payload.email, role: payload.role, id: payload.sub };
+      })();
+      setUser(userInfo);
       return { success: true };
     } catch (error) {
       return {
@@ -60,8 +68,10 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const isAdmin = user?.role === 'ADMIN';
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, isAdmin }}>
       {children}
     </AuthContext.Provider>
   );

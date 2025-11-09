@@ -1,27 +1,54 @@
 import { useEffect, useState } from 'react';
-import { itemsAPI } from '../services/api';
+import { itemsAPI, categoriesAPI } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 
 const Items = () => {
+  const { isAdmin } = useAuth();
   const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [filters, setFilters] = useState({
+    status: '',
+    categoryId: '',
+    search: '',
+  });
   const [formData, setFormData] = useState({
     name: '',
     sku: '',
+    barcode: '',
     supplier: '',
+    categoryId: '',
     initialQuantity: 0,
     lowStockThreshold: 5,
+    status: 'AVAILABLE',
   });
   const [error, setError] = useState('');
 
   useEffect(() => {
+    fetchCategories();
     fetchItems();
-  }, []);
+  }, [filters]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await categoriesAPI.getAll();
+      setCategories(response.data);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
 
   const fetchItems = async () => {
     try {
-      const response = await itemsAPI.getAll();
+      setLoading(true);
+      const params = {};
+      if (filters.status) params.status = filters.status;
+      if (filters.categoryId) params.categoryId = filters.categoryId;
+      if (filters.search) params.search = filters.search;
+      
+      const response = await itemsAPI.getAll(params);
       setItems(response.data);
     } catch (error) {
       console.error('Error fetching items:', error);
@@ -35,20 +62,18 @@ const Items = () => {
     setError('');
 
     try {
+      const submitData = { ...formData };
+      if (!submitData.barcode) {
+        delete submitData.barcode; // Let backend generate it
+      }
       if (editingItem) {
-        await itemsAPI.update(editingItem.id, formData);
+        await itemsAPI.update(editingItem.id, submitData);
       } else {
-        await itemsAPI.create(formData);
+        await itemsAPI.create(submitData);
       }
       setShowModal(false);
       setEditingItem(null);
-      setFormData({
-        name: '',
-        sku: '',
-        supplier: '',
-        initialQuantity: 0,
-        lowStockThreshold: 5,
-      });
+      resetForm();
       fetchItems();
     } catch (error) {
       setError(error.response?.data?.error || 'Failed to save item');
@@ -60,9 +85,12 @@ const Items = () => {
     setFormData({
       name: item.name,
       sku: item.sku,
+      barcode: item.barcode || '',
       supplier: item.supplier || '',
+      categoryId: item.categoryId || item.category?.id || '',
       initialQuantity: item.initialQuantity,
       lowStockThreshold: item.lowStockThreshold,
+      status: item.status || 'AVAILABLE',
     });
     setShowModal(true);
   };
@@ -78,15 +106,22 @@ const Items = () => {
     }
   };
 
-  const openModal = () => {
-    setEditingItem(null);
+  const resetForm = () => {
     setFormData({
       name: '',
       sku: '',
+      barcode: '',
       supplier: '',
+      categoryId: '',
       initialQuantity: 0,
       lowStockThreshold: 5,
+      status: 'AVAILABLE',
     });
+  };
+
+  const openModal = () => {
+    setEditingItem(null);
+    resetForm();
     setError('');
     setShowModal(true);
   };
@@ -97,7 +132,7 @@ const Items = () => {
     setError('');
   };
 
-  if (loading) {
+  if (loading && items.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -109,76 +144,144 @@ const Items = () => {
     <div className="px-4 py-6 sm:px-0">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Items</h1>
-        <button
-          onClick={openModal}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-        >
-          Add New Item
-        </button>
+        {isAdmin && (
+          <button
+            onClick={openModal}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Add New Item
+          </button>
+        )}
       </div>
 
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-lg shadow mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <input
+              type="text"
+              placeholder="Search by name, SKU, or barcode"
+              className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              value={filters.search}
+              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <select
+              className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+            >
+              <option value="">All Statuses</option>
+              <option value="AVAILABLE">Available</option>
+              <option value="ISSUED">Issued</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              value={filters.categoryId}
+              onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
+            >
+              <option value="">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Items List */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
-        <ul className="divide-y divide-gray-200">
-          {items.map((item) => {
-            const isLowStock = item.currentStock < item.lowStockThreshold;
-            return (
-              <li key={item.id} className={isLowStock ? 'bg-red-50' : ''}>
-                <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                          isLowStock ? 'bg-red-100' : 'bg-blue-100'
-                        }`}>
-                          <span className={`font-semibold ${isLowStock ? 'text-red-600' : 'text-blue-600'}`}>
-                            {item.name[0]}
-                          </span>
+        {items.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-500">No items found</p>
+          </div>
+        ) : (
+          <ul className="divide-y divide-gray-200">
+            {items.map((item) => {
+              const isLowStock = item.currentStock < item.lowStockThreshold;
+              return (
+                <li key={item.id} className={isLowStock ? 'bg-red-50' : ''}>
+                  <div className="px-4 py-4 sm:px-6">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center flex-1">
+                        <div className="flex-shrink-0">
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                            isLowStock ? 'bg-red-100' : 'bg-blue-100'
+                          }`}>
+                            <span className={`font-semibold ${isLowStock ? 'text-red-600' : 'text-blue-600'}`}>
+                              {item.name[0]}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="ml-4 flex-1">
+                          <div className="flex items-center flex-wrap gap-2">
+                            <p className="text-sm font-medium text-gray-900">{item.name}</p>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                              item.status === 'AVAILABLE' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-yellow-100 text-yellow-800'
+                            }`}>
+                              {item.status}
+                            </span>
+                            {isLowStock && (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Low Stock
+                              </span>
+                            )}
+                          </div>
+                          <div className="mt-1 space-y-1">
+                            <p className="text-sm text-gray-500">SKU: {item.sku}</p>
+                            <p className="text-sm text-gray-500">Barcode: {item.barcode}</p>
+                            {item.category && (
+                              <p className="text-sm text-gray-500">Category: {item.category.name}</p>
+                            )}
+                            {item.supplier && (
+                              <p className="text-sm text-gray-500">Supplier: {item.supplier}</p>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <div className="flex items-center">
-                          <p className="text-sm font-medium text-gray-900">{item.name}</p>
-                          {isLowStock && (
-                            <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                              Low Stock
-                            </span>
-                          )}
+                      <div className="flex items-center space-x-4 ml-4">
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-900">Stock: {item.currentStock}</p>
+                          <p className="text-sm text-gray-500">Threshold: {item.lowStockThreshold}</p>
                         </div>
-                        <p className="text-sm text-gray-500">SKU: {item.sku}</p>
-                        {item.supplier && (
-                          <p className="text-sm text-gray-500">Supplier: {item.supplier}</p>
+                        {isAdmin && (
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleEdit(item)}
+                              className="text-blue-600 hover:text-blue-900 text-sm font-medium"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(item.id)}
+                              className="text-red-600 hover:text-red-900 text-sm font-medium"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">Stock: {item.currentStock}</p>
-                        <p className="text-sm text-gray-500">Threshold: {item.lowStockThreshold}</p>
-                      </div>
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => handleEdit(item)}
-                          className="text-blue-600 hover:text-blue-900 text-sm font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="text-red-600 hover:text-red-900 text-sm font-medium"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </div>
                   </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
 
-      {showModal && (
+      {/* Modal */}
+      {showModal && isAdmin && (
         <div className="fixed z-10 inset-0 overflow-y-auto">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
             <div className="fixed inset-0 transition-opacity" onClick={closeModal}>
@@ -219,6 +322,32 @@ const Items = () => {
                       />
                     </div>
                     <div>
+                      <label className="block text-sm font-medium text-gray-700">Barcode</label>
+                      <input
+                        type="text"
+                        placeholder="Leave empty to auto-generate"
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        value={formData.barcode}
+                        onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Category *</label>
+                      <select
+                        required
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        value={formData.categoryId}
+                        onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700">Supplier</label>
                       <input
                         type="text"
@@ -226,6 +355,17 @@ const Items = () => {
                         value={formData.supplier}
                         onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
                       />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Status</label>
+                      <select
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      >
+                        <option value="AVAILABLE">Available</option>
+                        <option value="ISSUED">Issued</option>
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Initial Quantity</label>
@@ -274,4 +414,3 @@ const Items = () => {
 };
 
 export default Items;
-
