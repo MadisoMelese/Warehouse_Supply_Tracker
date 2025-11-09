@@ -1,0 +1,598 @@
+{
+	"info": {
+		"name": "Warehouse Management API",
+		"description": "Complete API collection for Warehouse Management System with role-based access control",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:4000",
+			"type": "string"
+		},
+		{
+			"key": "adminToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userToken",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register User",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						}
+					}
+				},
+				{
+					"name": "Login User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"userToken\", jsonData.token);",
+									"    pm.collectionVariables.set(\"userToken\", jsonData.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const jsonData = pm.response.json();",
+									"    pm.environment.set(\"adminToken\", jsonData.token);",
+									"    pm.collectionVariables.set(\"adminToken\", jsonData.token);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"AdminPass123!\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Get All Users (Admin Only)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/users",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "users"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Categories",
+			"item": [
+				{
+					"name": "Create Category (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Electronics\",\n  \"description\": \"Electronic devices and components\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Get All Categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/categories",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories"]
+						}
+					}
+				},
+				{
+					"name": "Get Category by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/categories/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories", "1"]
+						}
+					}
+				},
+				{
+					"name": "Update Category (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Electronics & Gadgets\",\n  \"description\": \"Updated description\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/categories/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "categories", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Items",
+			"item": [
+				{
+					"name": "Create Item (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Laptop Dell XPS 15\",\n  \"sku\": \"LAP-DELL-XPS15-001\",\n  \"barcode\": \"BC1234567890\",\n  \"supplier\": \"Dell Inc.\",\n  \"categoryId\": 1,\n  \"initialQuantity\": 10,\n  \"lowStockThreshold\": 3,\n  \"status\": \"AVAILABLE\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/items",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "items"]
+						}
+					}
+				},
+				{
+					"name": "Get All Items",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/items?status=AVAILABLE&categoryId=1&search=laptop",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "items"],
+							"query": [
+								{
+									"key": "status",
+									"value": "AVAILABLE"
+								},
+								{
+									"key": "categoryId",
+									"value": "1"
+								},
+								{
+									"key": "search",
+									"value": "laptop"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Item by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/items/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "items", "1"]
+						}
+					}
+				},
+				{
+					"name": "Get Item by Barcode",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/items/BC1234567890",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "items", "BC1234567890"]
+						}
+					}
+				},
+				{
+					"name": "Update Item (Admin)",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Laptop Dell XPS 15 (Updated)\",\n  \"status\": \"ISSUED\",\n  \"lowStockThreshold\": 5\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/items/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "items", "1"]
+						}
+					}
+				},
+				{
+					"name": "Delete Item (Admin)",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/items/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "items", "1"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Movements",
+			"item": [
+				{
+					"name": "Request Inbound Movement (User)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemId\": 1,\n  \"type\": \"INBOUND\",\n  \"quantity\": 5,\n  \"notes\": \"New stock received from supplier\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/movements",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "movements"]
+						}
+					}
+				},
+				{
+					"name": "Request Outbound Movement (User)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"itemId\": 1,\n  \"type\": \"OUTBOUND\",\n  \"quantity\": 2,\n  \"notes\": \"Need for project deployment\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/movements",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "movements"]
+						}
+					}
+				},
+				{
+					"name": "Get All Movements",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/movements?type=OUTBOUND&status=PENDING&itemId=1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "movements"],
+							"query": [
+								{
+									"key": "type",
+									"value": "OUTBOUND"
+								},
+								{
+									"key": "status",
+									"value": "PENDING"
+								},
+								{
+									"key": "itemId",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Movement by ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/movements/1",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "movements", "1"]
+						}
+					}
+				},
+				{
+					"name": "Approve Movement (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/movements/1/approve",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "movements", "1", "approve"]
+						}
+					}
+				},
+				{
+					"name": "Reject Movement (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"reason\": \"Insufficient justification for this request\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/movements/1/reject",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "movements", "1", "reject"]
+						}
+					}
+				},
+				{
+					"name": "Return Item",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/movements/1/return",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "movements", "1", "return"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "Tracking (Admin Only)",
+			"item": [
+				{
+					"name": "Get Item Assignments",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracking/assignments?userId=2&isReturned=false&status=ISSUED",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracking", "assignments"],
+							"query": [
+								{
+									"key": "userId",
+									"value": "2"
+								},
+								{
+									"key": "isReturned",
+									"value": "false"
+								},
+								{
+									"key": "status",
+									"value": "ISSUED"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get User Activity Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracking/user-activity",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracking", "user-activity"]
+						}
+					}
+				},
+				{
+					"name": "Get Pending Requests",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{adminToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/tracking/pending-requests",
+							"host": ["{{baseUrl}}"],
+							"path": ["api", "tracking", "pending-requests"]
+						}
+					}
+				}
+			]
+		}
+	]
+}
+

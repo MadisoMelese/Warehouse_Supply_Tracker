@@ -10,6 +10,8 @@ import authRouter from './routes/auth.js';
 import itemsRouter from './routes/items.js';
 import movementsRouter from './routes/movements.js';
 import analyticsRouter from './routes/analytics.js';
+import categoriesRouter from './routes/categories.js';
+import trackingRouter from './routes/tracking.js';
 
 const app = express();
 
@@ -48,6 +50,8 @@ app.use('/auth', authRouter);
 app.use('/api/items', itemsRouter);
 app.use('/api/movements', movementsRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/categories', categoriesRouter);
+app.use('/api/tracking', trackingRouter);
 
 const PORT = process.env.PORT || 4000;
 
