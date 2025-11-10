@@ -12,7 +12,7 @@ This guide explains how to set up and run the Warehouse application using Docker
 1. **Clone the repository** (if you haven't already):
    ```bash
    git clone <repository-url>
-   cd Warehouse
+   cd Warehouses
    ```
 
 2. **Create environment file**:
