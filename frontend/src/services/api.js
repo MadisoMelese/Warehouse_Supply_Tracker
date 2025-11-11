@@ -42,6 +42,9 @@ export const authAPI = {
   logout: () => api.post('/auth/logout'),
   getAllUsers: () => api.get('/auth/users'),
   createUser: (data) => api.post('/auth/users', data),
+  getUser: (id) => api.get(`/auth/users/${id}`),
+  updateUser: (id, data) => api.put(`/auth/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/auth/users/${id}`),
 };
 
 // Categories API

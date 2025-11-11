@@ -13,6 +13,7 @@ import Analytics from './pages/Analytics';
 import Users from './pages/Users';
 import Categories from './pages/Categories';
 import Tracking from './pages/Tracking';
+import UserDetail from './pages/UserDetail';
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -87,6 +88,16 @@ const AppRoutes = () => {
           <ProtectedRoute requireAdmin>
             <Layout>
               <Users />
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/users/:id"
+        element={
+          <ProtectedRoute requireAdmin>
+            <Layout>
+              <UserDetail />
             </Layout>
           </ProtectedRoute>
         }
