@@ -12,6 +12,7 @@ import movementsRouter from './routes/movements.js';
 import analyticsRouter from './routes/analytics.js';
 import categoriesRouter from './routes/categories.js';
 import trackingRouter from './routes/tracking.js';
+import { authenticateAdmin } from './middleware/admin.js';
 
 const app = express();
 
@@ -57,6 +58,14 @@ const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, async () => {
   console.log(`Server listening on port http://localhost:${PORT}`)
+
+  // Dev convenience: run once on startup so you can see logs immediately
+  try {
+    await checkAndNotifyLowStock();
+  } catch (e) {
+    console.error('Initial low-stock check failed', e);
+  }
+
   cron.schedule('0 * * * *', async () => {
     try {
       await checkAndNotifyLowStock();
@@ -64,4 +73,15 @@ app.listen(PORT, async () => {
       console.error('Low-stock job failed', e);
     }
   });
+});
+
+// Admin-only manual trigger
+app.post('/api/alerts/run-low-stock-check', authenticateAdmin, async (req, res) => {
+  try {
+    await checkAndNotifyLowStock();
+    res.json({ message: 'Low-stock check executed' });
+  } catch (e) {
+    console.error('Manual low-stock check failed', e);
+    res.status(500).json({ error: 'Low-stock check failed' });
+  }
 });
