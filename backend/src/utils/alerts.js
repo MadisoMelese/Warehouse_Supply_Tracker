@@ -2,11 +2,11 @@ import prisma from './prisma.js';
 import nodemailer from 'nodemailer';
 
 export const checkAndNotifyLowStock = async () => {
-  // 1) Find low stock items
+  // 1) Find low stock items (stock <= threshold)
   const rows = await prisma.$queryRaw`
     SELECT id, name, "currentStock", "lowStockThreshold"
     FROM "Item"
-    WHERE "currentStock" < "lowStockThreshold";
+    WHERE "currentStock" <= "lowStockThreshold";
   `;
 
   if (!rows || rows.length === 0) {

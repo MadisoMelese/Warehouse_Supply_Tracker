@@ -13,6 +13,7 @@ import analyticsRouter from './routes/analytics.js';
 import categoriesRouter from './routes/categories.js';
 import trackingRouter from './routes/tracking.js';
 import { authenticateAdmin } from './middleware/admin.js';
+import { sendEmail } from './utils/mailer.js';
 
 const app = express();
 
@@ -83,5 +84,20 @@ app.post('/api/alerts/run-low-stock-check', authenticateAdmin, async (req, res) 
   } catch (e) {
     console.error('Manual low-stock check failed', e);
     res.status(500).json({ error: 'Low-stock check failed' });
+  }
+});
+
+// Admin-only: send a direct email message
+app.post('/api/messages/send', authenticateAdmin, async (req, res) => {
+  try {
+    const { to, subject, text, html } = req.body || {};
+    if (!to || !subject || (!text && !html)) {
+      return res.status(400).json({ error: 'to, subject, and (text or html) are required' });
+    }
+    const result = await sendEmail({ to, subject, text, html });
+    res.json(result);
+  } catch (e) {
+    console.error('Failed to send message', e);
+    res.status(500).json({ error: e.message || 'Failed to send message' });
   }
 });
