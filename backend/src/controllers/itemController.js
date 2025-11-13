@@ -256,6 +256,77 @@ export const updateItem = async (req, res) => {
 };
 
 /**
+ * Update stock directly - Admin only
+ * Creates an automatic movement record for audit purposes
+ */
+export const updateStock = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { newStock, reason } = req.body;
+    const adminId = req.user.sub;
+
+    if (newStock === undefined || newStock < 0) {
+      return res.status(400).json({ error: 'Valid newStock (>= 0) is required' });
+    }
+
+    const item = await prisma.item.findUnique({ where: { id } });
+    if (!item) {
+      return res.status(404).json({ error: 'Item not found' });
+    }
+
+    const stockDifference = Number(newStock) - item.currentStock;
+
+    // Update stock and create movement record in transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Update item stock
+      const updateData = { currentStock: Number(newStock) };
+
+      // Update status based on new stock
+      if (Number(newStock) === 0) {
+        updateData.status = 'ISSUED';
+      } else if (item.status === 'ISSUED' && Number(newStock) > 0) {
+        updateData.status = 'AVAILABLE';
+      }
+
+      const updatedItem = await tx.item.update({
+        where: { id },
+        data: updateData,
+        include: {
+          category: true
+        }
+      });
+
+      // Create movement record for audit trail
+      if (stockDifference !== 0) {
+        await tx.movement.create({
+          data: {
+            itemId: id,
+            type: stockDifference > 0 ? 'INBOUND' : 'OUTBOUND',
+            quantity: Math.abs(stockDifference),
+            status: 'APPROVED',
+            requestedById: adminId,
+            approvedById: adminId,
+            notes: reason || `Admin stock adjustment: ${stockDifference > 0 ? '+' : ''}${stockDifference}`
+          }
+        });
+      }
+
+      return updatedItem;
+    });
+
+    res.json({
+      message: 'Stock updated successfully',
+      item: result,
+      previousStock: item.currentStock,
+      newStock: Number(newStock),
+      difference: stockDifference
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+/**
  * Delete an item - Admin only
  */
 export const deleteItem = async (req, res) => {

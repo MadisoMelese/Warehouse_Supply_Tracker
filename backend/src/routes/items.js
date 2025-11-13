@@ -1,7 +1,7 @@
 import express from 'express';
 import authenticateJWT from '../middleware/auth.js';
 import { authenticateAdmin } from '../middleware/admin.js';
-import { createItem, getItems, getItem, updateItem, deleteItem } from '../controllers/itemController.js';
+import { createItem, getItems, getItem, updateItem, updateStock, deleteItem } from '../controllers/itemController.js';
 
 const router = express.Router();
 
@@ -13,5 +13,6 @@ router.get('/:id', authenticateJWT, getItem);
 router.post('/', authenticateAdmin, createItem);
 router.put('/:id', authenticateAdmin, updateItem);
 router.delete('/:id', authenticateAdmin, deleteItem);
+router.patch('/:id/stock', authenticateAdmin, updateStock);
 
 export default router;
