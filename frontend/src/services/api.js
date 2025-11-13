@@ -62,6 +62,10 @@ export const itemsAPI = {
   getById: (id) => api.get(`/api/items/${id}`),
   create: (data) => api.post('/api/items', data),
   update: (id, data) => api.put(`/api/items/${id}`, data),
+  updateStock: (id, newStock, reason) => api.patch(`/api/items/${id}/stock`, { 
+    newStock: Number(newStock), 
+    reason: reason || undefined 
+  }),
   delete: (id) => api.delete(`/api/items/${id}`),
 };
 

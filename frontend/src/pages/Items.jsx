@@ -9,9 +9,14 @@ const Items = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showStockModal, setShowStockModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [itemToUpdateStock, setItemToUpdateStock] = useState(null);
+  const [newStock, setNewStock] = useState(0);
+  const [stockReason, setStockReason] = useState('');
   const [deleteError, setDeleteError] = useState('');
+  const [stockError, setStockError] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   const [filters, setFilters] = useState({
     status: '',
@@ -122,6 +127,42 @@ const Items = () => {
     setShowDeleteModal(false);
     setItemToDelete(null);
     setDeleteError('');
+  };
+
+  const handleUpdateStockClick = (item) => {
+    setItemToUpdateStock(item);
+    setNewStock(item.currentStock);
+    setStockReason('');
+    setStockError('');
+    setShowStockModal(true);
+  };
+
+  const handleStockUpdate = async (e) => {
+    e.preventDefault();
+    if (!itemToUpdateStock) return;
+
+    setStockError('');
+    try {
+      const response = await itemsAPI.updateStock(itemToUpdateStock.id, newStock, stockReason);
+      console.log('Stock updated successfully:', response.data);
+      setShowStockModal(false);
+      setItemToUpdateStock(null);
+      setNewStock(0);
+      setStockReason('');
+      fetchItems();
+    } catch (error) {
+      console.error('Stock update error:', error);
+      const errorMessage = error.response?.data?.error || error.message || 'Failed to update stock';
+      setStockError(errorMessage);
+    }
+  };
+
+  const handleStockCancel = () => {
+    setShowStockModal(false);
+    setItemToUpdateStock(null);
+    setNewStock(0);
+    setStockReason('');
+    setStockError('');
   };
 
   const resetForm = () => {
@@ -269,7 +310,18 @@ const Items = () => {
                       </div>
                       <div className="flex items-center space-x-4 ml-4">
                         <div className="text-right">
-                          <p className="text-sm font-medium text-gray-900">Stock: {item.currentStock}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-gray-900">Stock: {item.currentStock}</p>
+                            {isAdmin && (
+                              <button
+                                onClick={() => handleUpdateStockClick(item)}
+                                className="text-xs text-blue-600 hover:text-blue-900 font-medium"
+                                title="Update stock"
+                              >
+                                ✏️
+                              </button>
+                            )}
+                          </div>
                           <p className="text-sm text-gray-500">Threshold: {item.lowStockThreshold}</p>
                         </div>
                         {isAdmin && (
@@ -485,6 +537,89 @@ const Items = () => {
                   Cancel
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Stock Modal */}
+      {showStockModal && itemToUpdateStock && (
+        <div className="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="stock-modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div 
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" 
+              onClick={handleStockCancel}
+              aria-hidden="true"
+            ></div>
+
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-50 relative">
+              <form onSubmit={handleStockUpdate}>
+                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4" id="stock-modal-title">
+                    Update Stock
+                  </h3>
+                  {stockError && (
+                    <div className="mb-4 rounded-md bg-red-50 p-4">
+                      <div className="text-sm text-red-800">{stockError}</div>
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm text-gray-700 mb-2">
+                        <span className="font-medium">Item:</span> {itemToUpdateStock.name}
+                      </p>
+                      <p className="text-sm text-gray-700 mb-4">
+                        <span className="font-medium">Current Stock:</span> {itemToUpdateStock.currentStock}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">New Stock *</label>
+                      <input
+                        type="number"
+                        min="0"
+                        required
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        value={newStock}
+                        onChange={(e) => setNewStock(parseInt(e.target.value) || 0)}
+                      />
+                      {newStock !== itemToUpdateStock.currentStock && (
+                        <p className="mt-2 text-sm text-gray-600">
+                          Difference: <span className={newStock > itemToUpdateStock.currentStock ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                            {newStock > itemToUpdateStock.currentStock ? '+' : ''}{newStock - itemToUpdateStock.currentStock}
+                          </span>
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Reason (Optional)</label>
+                      <textarea
+                        rows={3}
+                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        value={stockReason}
+                        onChange={(e) => setStockReason(e.target.value)}
+                        placeholder="Reason for stock adjustment..."
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  <button
+                    type="submit"
+                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm"
+                  >
+                    Update Stock
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleStockCancel}
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
