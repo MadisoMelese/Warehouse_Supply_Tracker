@@ -1,5 +1,6 @@
 import prisma from './prisma.js';
 import nodemailer from 'nodemailer';
+import { notifyAdmins } from './socket.js';
 
 export const checkAndNotifyLowStock = async () => {
   // 1) Find low stock items (stock <= threshold)
@@ -49,6 +50,19 @@ export const checkAndNotifyLowStock = async () => {
     rows.map(r => `<li>${r.name} (stock: ${r.currentStock}, threshold: ${r.lowStockThreshold})</li>`).join('')
   }</ul>`;
 
+  // Always send real-time notification to admins (regardless of email status)
+  notifyAdmins('low_stock_alert', {
+    type: 'low_stock',
+    title: 'Low Stock Alert',
+    message: `${rows.length} item(s) are running low on stock`,
+    items: rows.map(r => ({
+      id: r.id,
+      name: r.name,
+      currentStock: r.currentStock,
+      threshold: r.lowStockThreshold
+    }))
+  });
+
   try {
     const mail = {
       from: '"Warehouse" <no-reply@warehouse.local>',
@@ -78,11 +92,11 @@ export const checkAndNotifyLowStock = async () => {
         console.log('----- LOW STOCK ALERT (LOG ONLY) -----');
         console.log(info.message.toString());
         console.log('----- END ALERT -----');
-        return;
       } catch (fallbackErr) {
         console.error('Fallback log-only transport failed:', fallbackErr);
       }
+    } else {
+      console.error('Failed to send low-stock email:', err);
     }
-    console.error('Failed to send low-stock email:', err);
   }
 };

@@ -1,4 +1,5 @@
 import prisma from '../utils/prisma.js';
+import { notifyAdmins, notifyUser } from '../utils/socket.js';
 
 /**
  * Request a movement (inbound/outbound) - Users can request, requires admin approval
@@ -57,6 +58,19 @@ export const requestMovement = async (req, res) => {
           }
         }
       }
+    });
+
+    // Emit real-time notification to admins
+    notifyAdmins('movement_request', {
+      type: 'movement_request',
+      title: 'New Movement Request',
+      message: `${movement.requestedBy.email} requested ${movement.type.toLowerCase()} of ${movement.quantity} ${movement.item.name}`,
+      movementId: movement.id,
+      itemName: movement.item.name,
+      type: movement.type,
+      quantity: movement.quantity,
+      requestedBy: movement.requestedBy.email,
+      itemId: movement.itemId
     });
 
     res.status(201).json({
@@ -141,6 +155,17 @@ export const approveMovement = async (req, res) => {
       return { movement: updatedMovement, newStock };
     });
 
+    // Notify the user who requested the movement
+    notifyUser(result.movement.requestedById, 'movement_approved', {
+      type: 'movement_approved',
+      title: 'Movement Request Approved',
+      message: `Your ${result.movement.type.toLowerCase()} request for ${result.movement.quantity} ${result.movement.item.name} has been approved`,
+      movementId: result.movement.id,
+      itemName: result.movement.item.name,
+      movementType: result.movement.type,
+      quantity: result.movement.quantity
+    });
+
     res.json({
       message: 'Movement approved and stock updated',
       movement: result.movement,
@@ -161,7 +186,13 @@ export const rejectMovement = async (req, res) => {
     const adminId = req.user.sub;
 
     const movement = await prisma.movement.findUnique({
-      where: { id: Number(id) }
+      where: { id: Number(id) },
+      include: {
+        item: true,
+        requestedBy: {
+          select: { id: true, email: true }
+        }
+      }
     });
 
     if (!movement) {
@@ -192,6 +223,18 @@ export const rejectMovement = async (req, res) => {
           select: { id: true, email: true }
         }
       }
+    });
+
+    // Notify the user who requested the movement
+    notifyUser(updatedMovement.requestedById, 'movement_rejected', {
+      type: 'movement_rejected',
+      title: 'Movement Request Rejected',
+      message: `Your ${updatedMovement.type.toLowerCase()} request for ${updatedMovement.quantity} ${updatedMovement.item.name} has been rejected${reason ? `: ${reason}` : ''}`,
+      movementId: updatedMovement.id,
+      itemName: updatedMovement.item.name,
+      movementType: updatedMovement.type,
+      quantity: updatedMovement.quantity,
+      reason: reason || null
     });
 
     res.json({

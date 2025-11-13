@@ -1,10 +1,12 @@
 import 'dotenv/config';
 import express from 'express';
+import http from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cron from 'node-cron';
 import { checkAndNotifyLowStock } from './utils/alerts.js';
+import { initializeSocket } from './utils/socket.js';
 
 import authRouter from './routes/auth.js';
 import itemsRouter from './routes/items.js';
@@ -16,6 +18,7 @@ import { authenticateAdmin } from './middleware/admin.js';
 import { sendEmail } from './utils/mailer.js';
 
 const app = express();
+const httpServer = http.createServer(app);
 
 // Security + rate limit
 app.set('trust proxy', 1);
@@ -57,8 +60,12 @@ app.use('/api/tracking', trackingRouter);
 
 const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, async () => {
+// Initialize Socket.io
+initializeSocket(httpServer);
+
+httpServer.listen(PORT, async () => {
   console.log(`Server listening on port http://localhost:${PORT}`)
+  console.log(`Socket.io initialized`);
 
   // Dev convenience: run once on startup so you can see logs immediately
   try {
