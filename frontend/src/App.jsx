@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from "./contexts/AuthProvider";
+import { NotificationProvider } from "./contexts/NotificationProvider";
 
 import { useAuth } from "./hooks/useAuth";
 import ProtectedRoute from './components/ProtectedRoute';
@@ -111,7 +112,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppRoutes />
+        <NotificationProvider>
+          <AppRoutes />
+        </NotificationProvider>
       </AuthProvider>
     </Router>
   );
