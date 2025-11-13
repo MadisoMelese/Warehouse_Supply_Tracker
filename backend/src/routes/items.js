@@ -7,12 +7,14 @@ const router = express.Router();
 
 // Public routes (authenticated users)
 router.get('/', authenticateJWT, getItems);
-router.get('/:id', authenticateJWT, getItem);
 
-// Admin only routes
+// Admin only routes - specific routes first
 router.post('/', authenticateAdmin, createItem);
+router.patch('/:id/stock', authenticateAdmin, updateStock); // Must be before /:id routes
+
+// Generic routes
+router.get('/:id', authenticateJWT, getItem);
 router.put('/:id', authenticateAdmin, updateItem);
 router.delete('/:id', authenticateAdmin, deleteItem);
-router.patch('/:id/stock', authenticateAdmin, updateStock);
 
 export default router;
