@@ -15,6 +15,8 @@ import Users from './pages/Users';
 import Categories from './pages/Categories';
 import Tracking from './pages/Tracking';
 import UserDetail from './pages/UserDetail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -23,6 +25,8 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/dashboard" replace /> : <Register />} />
+      <Route path="/forgot-password" element={user ? <Navigate to="/dashboard" replace /> : <ForgotPassword />} />
+      <Route path="/reset-password" element={user ? <Navigate to="/dashboard" replace /> : <ResetPassword />} />
       <Route
         path="/dashboard"
         element={
