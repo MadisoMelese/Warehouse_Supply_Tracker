@@ -34,6 +34,7 @@ const Items = () => {
     status: 'AVAILABLE',
   });
   const [error, setError] = useState('');
+  const [lowStockInfoDismissed, setLowStockInfoDismissed] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -212,6 +213,28 @@ const Items = () => {
           </button>
         )}
       </div>
+
+      {isAdmin && !lowStockInfoDismissed && (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4 flex items-start justify-between">
+          <div className="flex items-start space-x-3">
+            <span className="text-xl">📧</span>
+            <div>
+              <p className="text-sm font-semibold text-blue-900">Low-stock email alerts are active</p>
+              <p className="text-sm text-blue-800 mt-1">
+                Whenever an item drops below its threshold, all configured admins receive a Nodemailer email plus the real-time alert inside the app.
+                Keep thresholds accurate so automated purchasing gets the right heads-up.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setLowStockInfoDismissed(true)}
+            className="text-blue-700 hover:text-blue-900 text-lg font-semibold"
+            aria-label="Dismiss low stock info"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow mb-6">

@@ -26,6 +26,7 @@ const Movements = () => {
   const [error, setError] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [banner, setBanner] = useState(null);
 
   useEffect(() => {
     fetchItems();
@@ -60,6 +61,34 @@ const Movements = () => {
     }
   };
 
+  const showBanner = (type, text) => {
+    setBanner({
+      type,
+      text,
+      id: Date.now()
+    });
+  };
+
+  const dismissBanner = () => setBanner(null);
+
+  const getBannerVariant = (type) => {
+    const variants = {
+      success: {
+        wrapper: 'border-green-200 bg-green-50 text-green-900',
+        icon: '✅'
+      },
+      info: {
+        wrapper: 'border-blue-200 bg-blue-50 text-blue-900',
+        icon: 'ℹ️'
+      },
+      error: {
+        wrapper: 'border-red-200 bg-red-50 text-red-900',
+        icon: '⚠️'
+      }
+    };
+    return variants[type] || variants.info;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -67,6 +96,7 @@ const Movements = () => {
 
     try {
       await movementsAPI.create(formData);
+      showBanner('success', 'Request submitted! Admins received an email and in-app alert.');
       setShowModal(false);
       setFormData({
         itemId: '',
@@ -77,7 +107,9 @@ const Movements = () => {
       setSelectedItem(null);
       await Promise.all([fetchMovements(), fetchItems()]);
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to create movement request');
+      const message = error.response?.data?.error || 'Failed to create movement request';
+      setError(message);
+      showBanner('error', message);
     } finally {
       setLoading(false);
     }
@@ -88,9 +120,11 @@ const Movements = () => {
 
     try {
       await movementsAPI.approve(id);
+      showBanner('success', 'Movement approved. The requester was emailed automatically.');
       await Promise.all([fetchMovements(), fetchItems()]);
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to approve movement');
+      const message = error.response?.data?.error || 'Failed to approve movement';
+      showBanner('error', message);
     }
   };
 
@@ -99,12 +133,14 @@ const Movements = () => {
 
     try {
       await movementsAPI.reject(selectedMovement.id, rejectReason);
+      showBanner('info', 'Movement rejected. The requester was notified by email.');
       setShowRejectModal(false);
       setSelectedMovement(null);
       setRejectReason('');
       await Promise.all([fetchMovements(), fetchItems()]);
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to reject movement');
+      const message = error.response?.data?.error || 'Failed to reject movement';
+      showBanner('error', message);
     }
   };
 
@@ -113,9 +149,11 @@ const Movements = () => {
 
     try {
       await movementsAPI.returnItem(id);
+      showBanner('info', 'Return recorded. Inventory was updated.');
       await Promise.all([fetchMovements(), fetchItems()]);
     } catch (error) {
-      alert(error.response?.data?.error || 'Failed to return item');
+      const message = error.response?.data?.error || 'Failed to return item';
+      showBanner('error', message);
     }
   };
 
@@ -186,6 +224,8 @@ const Movements = () => {
     );
   }
 
+  const bannerVariant = banner ? getBannerVariant(banner.type) : null;
+
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="flex justify-between items-center mb-6">
@@ -207,6 +247,29 @@ const Movements = () => {
           </button>
         )}
       </div>
+
+      {banner && (
+        <div className={`mb-6 rounded-lg border ${bannerVariant.wrapper} p-4`}>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start space-x-3">
+              <span className="text-xl">{bannerVariant.icon}</span>
+              <div>
+                <p className="text-sm font-medium">{banner.text}</p>
+                <p className="text-xs mt-1">
+                  Emails are delivered via Nodemailer plus real-time in-app notifications.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={dismissBanner}
+              className="text-sm font-medium hover:text-gray-900 focus:outline-none"
+              aria-label="Dismiss notification"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="bg-white shadow rounded-lg mb-6 p-4">
@@ -522,18 +585,24 @@ const Movements = () => {
 
       {/* Reject Modal */}
       {showRejectModal && selectedMovement && (
-        <div className="fixed z-10 inset-0 overflow-y-auto">
+        <div className="fixed z-50 inset-0 overflow-y-auto" role="dialog" aria-modal="true">
           <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-            <div className="fixed inset-0 transition-opacity" onClick={closeRejectModal}>
-              <div className="absolute inset-0 bg-gray-500 opacity-75"></div>
-            </div>
+            <div
+              className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+              onClick={closeRejectModal}
+              aria-hidden="true"
+            ></div>
 
-            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
+              &#8203;
+            </span>
+
+            <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full z-50 relative">
               <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                 <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                   Reject Movement Request
                 </h3>
-                <div className="mb-4">
+                <div className="mb-4 space-y-1">
                   <p className="text-sm text-gray-700">
                     Item: <span className="font-medium">{selectedMovement.item?.name}</span>
                   </p>
@@ -550,10 +619,11 @@ const Movements = () => {
                   </label>
                   <textarea
                     rows={4}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-white focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
                     placeholder="Enter reason for rejection..."
+                    autoFocus
                   />
                 </div>
               </div>
