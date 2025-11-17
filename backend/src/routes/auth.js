@@ -1,5 +1,16 @@
 import express from 'express';
-import { login, logout, register, getAllUsers, createUser, getUserById, updateUserById, deleteUserById } from '../controllers/authController.js';
+import {
+  login,
+  logout,
+  register,
+  getAllUsers,
+  createUser,
+  getUserById,
+  updateUserById,
+  deleteUserById,
+  requestPasswordReset,
+  resetPassword
+} from '../controllers/authController.js';
 import authenticateJWT from '../middleware/auth.js';
 import { authenticateAdmin } from '../middleware/admin.js';
 
@@ -8,6 +19,8 @@ const router = express.Router();
 router.post('/login', login);
 router.post('/logout', logout);
 router.post('/register', register);
+router.post('/forgot-password', requestPasswordReset);
+router.post('/reset-password', resetPassword);
 
 // Only admin can get all users
 router.post('/create-user', authenticateAdmin, createUser);

@@ -74,8 +74,20 @@ model User {
   role              UserRole    @default(USER)
   requestedMovements Movement[] @relation("RequestedMovements")
   approvedMovements Movement[]  @relation("ApprovedMovements")
+  resetTokens       PasswordResetToken[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
+}
+
+model PasswordResetToken {
+  id         Int      @id @default(autoincrement())
+  tokenHash  String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     Int
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  usedAt     DateTime?
+  createdAt  DateTime @default(now())
 }
 
 enum UserRole {

@@ -1,6 +1,11 @@
 import prisma from '../utils/prisma.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { sendPasswordResetEmail } from '../utils/mailer.js';
+
+const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
+const resetExpiryMinutes = Number(process.env.PASSWORD_RESET_EXPIRY_MINUTES || 30);
 
 export const login = async (req, res) => {
   try {
@@ -39,7 +44,6 @@ export const register = async (req, res) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) return res.status(400).json({ error: 'Invalid email format' });
 
-  const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
   if (!strongPassword.test(password)) {
     return res.status(400).json({
       error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character'
@@ -70,7 +74,6 @@ export const createUser = async (req, res) => {
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
     if (!strongPassword.test(password)) {
       return res.status(400).json({
         error: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character'
@@ -193,7 +196,6 @@ export const updateUserById = async (req, res) => {
       data.role = role;
     }
     if (password !== undefined) {
-      const strongPassword = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/;
       if (!strongPassword.test(password)) {
         return res.status(400).json({ error: 'Password must be at least 8 chars incl uppercase, lowercase, number, special char' });
       }
@@ -234,5 +236,89 @@ export const deleteUserById = async (req, res) => {
   } catch (err) {
     if (err.code === 'P2025') return res.status(404).json({ error: 'User not found' });
     res.status(500).json({ error: 'Failed to delete user' });
+  }
+};
+
+export const requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (user) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+      const expiresAt = new Date(Date.now() + resetExpiryMinutes * 60 * 1000);
+
+      await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
+      await prisma.passwordResetToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          expiresAt
+        }
+      });
+
+      try {
+        await sendPasswordResetEmail({ email: user.email, token, expiresAt });
+      } catch (emailErr) {
+        console.error('Failed to send password reset email', emailErr);
+      }
+    }
+
+    res.json({ message: 'If an account exists for that email, a reset link has been sent.' });
+  } catch (err) {
+    console.error('Password reset request failed', err);
+    res.status(500).json({ error: 'Failed to process password reset request' });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { token, password } = req.body || {};
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token and new password are required' });
+    }
+
+    if (!strongPassword.test(password)) {
+      return res.status(400).json({
+        error: 'Password must be at least 8 chars and include uppercase, lowercase, number, and special character'
+      });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const record = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash }
+    });
+
+    if (!record || record.used || record.expiresAt < new Date()) {
+      return res.status(400).json({ error: 'Reset link is invalid or has expired' });
+    }
+
+    const hashed = await bcrypt.hash(password, 12);
+
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: record.userId },
+        data: { password: hashed }
+      }),
+      prisma.passwordResetToken.update({
+        where: { tokenHash },
+        data: { used: true, usedAt: new Date() }
+      }),
+      prisma.passwordResetToken.deleteMany({
+        where: {
+          userId: record.userId,
+          used: false
+        }
+      })
+    ]);
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (err) {
+    console.error('Password reset failed', err);
+    res.status(500).json({ error: 'Failed to reset password' });
   }
 };

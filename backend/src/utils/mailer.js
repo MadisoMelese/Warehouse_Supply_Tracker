@@ -6,6 +6,7 @@ const DEFAULT_FROM = process.env.EMAIL_FROM || `"${APP_NAME}" <no-reply@warehous
 const FRONTEND_BASE_URL = sanitizeBaseUrl(
   process.env.APP_BASE_URL || process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173'
 );
+const PASSWORD_RESET_EXP_MINUTES = Number(process.env.PASSWORD_RESET_EXPIRY_MINUTES || 30);
 
 const ADMIN_RECIPIENT_FALLBACK = process.env.SMTP_USER ? [process.env.SMTP_USER] : [];
 
@@ -179,6 +180,39 @@ export async function sendMovementStatusEmail({ movement, status, reason }) {
   return sendEmail({
     to: movement.requestedBy.email,
     subject,
+    html,
+    text
+  });
+}
+
+export async function sendPasswordResetEmail({ email, token, expiresAt }) {
+  if (!email || !token) {
+    return { ok: false, skipped: true };
+  }
+
+  const resetUrl = `${FRONTEND_BASE_URL}/reset-password?token=${encodeURIComponent(token)}`;
+  const minutes = Math.max(5, PASSWORD_RESET_EXP_MINUTES);
+  const html = buildTemplate({
+    title: 'Reset your password',
+    intro: `We received a request to reset your ${APP_NAME} account password.`,
+    body: `
+      <p style="color:#475467;font-size:14px;margin:0 0 16px;">Click the button below to set a new password. This link expires in ${minutes} minutes.</p>
+      ${renderCTA('Reset password', resetUrl)}
+      <p style="color:#94a3b8;font-size:13px;margin:24px 0 0;">If you didn't request this, you can safely ignore this email.</p>
+    `
+  });
+  const text = [
+    `Reset your ${APP_NAME} password.`,
+    `This link expires in ${minutes} minutes.`,
+    '',
+    resetUrl,
+    '',
+    'If you did not request this change, you can ignore this email.'
+  ].join('\n');
+
+  return sendEmail({
+    to: email,
+    subject: 'Reset your password',
     html,
     text
   });
