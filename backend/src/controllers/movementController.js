@@ -1,5 +1,6 @@
 import prisma from '../utils/prisma.js';
 import { notifyAdmins, notifyUser } from '../utils/socket.js';
+import { sendMovementRequestEmail, sendMovementStatusEmail } from '../utils/mailer.js';
 
 /**
  * Request a movement (inbound/outbound) - Users can request, requires admin approval
@@ -72,6 +73,12 @@ export const requestMovement = async (req, res) => {
       requestedBy: movement.requestedBy.email,
       itemId: movement.itemId
     });
+
+    try {
+      await sendMovementRequestEmail({ movement });
+    } catch (emailErr) {
+      console.error('Failed to send movement request email:', emailErr);
+    }
 
     res.status(201).json({
       message: 'Movement request created. Waiting for admin approval.',
@@ -166,6 +173,12 @@ export const approveMovement = async (req, res) => {
       quantity: result.movement.quantity
     });
 
+    try {
+      await sendMovementStatusEmail({ movement: result.movement, status: 'APPROVED' });
+    } catch (emailErr) {
+      console.error('Failed to send movement approval email:', emailErr);
+    }
+
     res.json({
       message: 'Movement approved and stock updated',
       movement: result.movement,
@@ -236,6 +249,16 @@ export const rejectMovement = async (req, res) => {
       quantity: updatedMovement.quantity,
       reason: reason || null
     });
+
+    try {
+      await sendMovementStatusEmail({
+        movement: updatedMovement,
+        status: 'REJECTED',
+        reason
+      });
+    } catch (emailErr) {
+      console.error('Failed to send movement rejection email:', emailErr);
+    }
 
     res.json({
       message: 'Movement rejected',
