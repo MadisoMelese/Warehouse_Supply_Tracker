@@ -1,8 +1,8 @@
 import nodemailer from 'nodemailer';
 
 const APP_NAME = process.env.APP_NAME || 'Warehouse';
-const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@warehouse.local';
-const DEFAULT_FROM = process.env.EMAIL_FROM || `"${APP_NAME}" <no-reply@warehouse.local>`;
+const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'madishamadiso00@gmail.com';
+const DEFAULT_FROM = process.env.EMAIL_FROM || `"${APP_NAME}" madishamadiso00@gmail.com`;
 const FRONTEND_BASE_URL = sanitizeBaseUrl(
   process.env.APP_BASE_URL || process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:5173'
 );
@@ -13,7 +13,7 @@ const ADMIN_RECIPIENT_FALLBACK = process.env.SMTP_USER ? [process.env.SMTP_USER]
 export async function getTransporter() {
   let smtpUser = process.env.SMTP_USER;
   let smtpPass = process.env.SMTP_PASS;
-  let smtpHost = process.env.SMTP_HOST || 'smtp.ethereal.email';
+  let smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
   let smtpPort = Number(process.env.SMTP_PORT || 587);
 
   // Auto-create Ethereal test account if credentials are not provided
