@@ -38,7 +38,8 @@ export async function getTransporter() {
       rejectUnauthorized: false,
     },
     connectionTimeout: 10000
-  });
+});
+
   
 }
 
@@ -46,6 +47,13 @@ export async function sendEmail({ to, subject, html, text, from = DEFAULT_FROM }
   let transporter;
   try {
     transporter = await getTransporter();
+    transporter.verify((err, success) => {
+      if (err) {
+        console.error('SMTP verification failed:', err);
+      } else {
+        console.log('SMTP ready to send emails');
+      }
+    });
   } catch (err) {
     console.warn('Failed to create SMTP transporter, using log-only fallback:', err.message);
     return logOnlyEmail({ from, to, subject, html, text });
