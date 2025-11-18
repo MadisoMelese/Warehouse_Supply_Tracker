@@ -27,11 +27,19 @@ export async function getTransporter() {
 
   return nodemailer.createTransport({
     host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    auth: { user: smtpUser, pass: smtpPass },
-    connectionTimeout: Number(process.env.SMTP_TIMEOUT_MS || 8000)
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass,
+    },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 10000
   });
+  
 }
 
 export async function sendEmail({ to, subject, html, text, from = DEFAULT_FROM }) {
