@@ -31,17 +31,17 @@ app.use(rateLimit({
 }));
 
 // Stricter CORS (whitelist via env)
-const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-const corsOptions = {
-  origin: (origin, cb) => {
-    if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) return cb(null, true);
-    cb(new Error('Not allowed by CORS'));
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-};
-app.use(cors(corsOptions));
+// const allowedOrigins = (process.env.CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
+// const corsOptions = {
+//   origin: (origin, cb) => {
+//     if (!origin || allowedOrigins.length === 0 || allowedOrigins.includes(origin)) return cb(null, true);
+//     cb(new Error('Not allowed by CORS'));
+//   },
+//   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+//   credentials: true
+// };
+// app.use(cors(corsOptions));
 
 app.use(express.json());
 
